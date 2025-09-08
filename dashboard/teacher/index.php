@@ -372,45 +372,11 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config (Direct - No Redirect Logic) -->
+    <!-- Firebase Config -->
+    <script src="../../assets/js/firebase-config.js"></script>
+    
     <script>
-        // Firebase Configuration (Direct - No redirect logic)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBsWwXT8vZ3Y_G_HxLXCOucy8trXZ8vXog",
-            authDomain: "chat-room-realtime.firebaseapp.com",
-            databaseURL: "https://chat-room-realtime-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "chat-room-realtime",
-            storageBucket: "chat-room-realtime.firebasestorage.app",
-            messagingSenderId: "952502420326",
-            appId: "1:952502420326:web:a8d939bbb6c3dbefdbbea7"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-        
-        // Global variables
-        let currentUser = null;
-        
-        // Auth state listener (simplified)
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                console.log('✅ User authenticated:', user.email);
-            } else {
-                currentUser = null;
-                console.log('❌ User logged out');
-                // Redirect to login page
-                window.location.href = '../../login.php';
-            }
-        });
-        
-        // Helper functions
-        function isAuthenticated() {
-            return currentUser !== null;
-        }
-        
+        // Helper functions specific to teacher dashboard
         function signOut() {
             auth.signOut().then(() => {
                 window.location.href = '../../login.php';
@@ -429,20 +395,28 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
         
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            if (!isAuthenticated()) {
-                window.location.href = '../../index.php';
-                return;
-            }
-            
-            // Check if user is teacher
-            getUserRole().then(role => {
-                if (role !== 'teacher') {
-                    window.location.href = '../student/index.php';
+            // Wait for auth to initialize
+            const checkAuth = () => {
+                if (!isAuthenticated()) {
+                    setTimeout(checkAuth, 100);
                     return;
                 }
                 
-                initializeDashboard();
-            });
+                // Check if user is teacher
+                getUserRole().then(role => {
+                    if (role !== 'teacher') {
+                        window.location.href = '../student/index.php';
+                        return;
+                    }
+                    
+                    initializeDashboard();
+                }).catch(error => {
+                    console.error('Error checking role:', error);
+                    window.location.href = '../../login.php';
+                });
+            };
+            
+            checkAuth();
         });
         
         function initializeDashboard() {

@@ -270,68 +270,8 @@ $page_title = 'Login - Chat Room Realtime';
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config (Direct - No Redirect Logic) -->
-    <script>
-        // Firebase Configuration (Direct - No redirect logic)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBsWwXT8vZ3Y_G_HxLXCOucy8trXZ8vXog",
-            authDomain: "chat-room-realtime.firebaseapp.com",
-            databaseURL: "https://chat-room-realtime-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "chat-room-realtime",
-            storageBucket: "chat-room-realtime.firebasestorage.app",
-            messagingSenderId: "952502420326",
-            appId: "1:952502420326:web:a8d939bbb6c3dbefdbbea7"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-        
-        // Global variables
-        let currentUser = null;
-        
-        // Auth state listener (simplified)
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                console.log('✅ User authenticated:', user.email);
-                
-                // Redirect based on role
-                checkUserRole(user.uid);
-            } else {
-                currentUser = null;
-                console.log('❌ User logged out');
-            }
-        });
-        
-        // Check user role and redirect
-        function checkUserRole(userId) {
-            // Skip redirect if already on correct dashboard
-            if (window.location.pathname.includes('dashboard/')) {
-                return;
-            }
-            
-            const userRef = database.ref('users/' + userId);
-            
-            userRef.once('value', (snapshot) => {
-                const userData = snapshot.val();
-                
-                if (userData && userData.role) {
-                    if (userData.role === 'teacher') {
-                        window.location.href = 'dashboard/teacher/index.php';
-                    } else if (userData.role === 'student') {
-                        window.location.href = 'dashboard/student/index.php';
-                    }
-                }
-            });
-        }
-        
-        // Helper function untuk sign in
-        function signIn(email, password) {
-            return auth.signInWithEmailAndPassword(email, password);
-        }
-    </script>
+    <!-- Firebase Config -->
+    <script src="assets/js/firebase-config.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

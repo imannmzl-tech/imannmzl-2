@@ -311,7 +311,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
                 </button>
                 <div class="input-group flex-grow-1">
                     <input type="text" class="form-control" id="messageInput" placeholder="Type your message..." maxlength="1000">
-                    <button class="btn btn-send" type="button" onclick="sendMessage()">
+                    <button class="btn btn-send" type="button" onclick="sendChatMessage()">
                         <i class="bi bi-send"></i>
                     </button>
                 </div>
@@ -380,7 +380,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             loadRoomInfo();
             
             // Join room
-            joinRoom();
+            joinChatRoom();
             
             // Setup message listeners
             setupMessageListeners();
@@ -422,7 +422,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             });
         }
         
-        async function joinRoom() {
+        async function joinChatRoom() {
             try {
                 await joinRoom(roomId);
             } catch (error) {
@@ -468,7 +468,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendMessage();
+                    sendChatMessage();
                 }
             });
             
@@ -567,7 +567,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             }
         }
         
-        async function sendMessage() {
+        async function sendChatMessage() {
             const messageInput = document.getElementById('messageInput');
             const text = messageInput.value.trim();
             
