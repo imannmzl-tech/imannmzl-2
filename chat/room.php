@@ -1,9 +1,20 @@
 <?php
 require_once '../config/config.php';
-require_once '../config/firebase-config.php';
+require_once '../config/auth-hybrid.php';
+
+// Require login
+requireLogin();
 
 $room_id = $_GET['id'] ?? '';
+if (empty($room_id)) {
+    $user = getCurrentUser();
+    $redirectUrl = $user['role'] === 'teacher' ? '../dashboard/teacher/index.php' : '../dashboard/student/index.php';
+    header("Location: $redirectUrl");
+    exit;
+}
+
 $page_title = 'Chat Room - Chat Room Realtime';
+$currentUser = getCurrentUser();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -330,21 +341,21 @@ $page_title = 'Chat Room - Chat Room Realtime';
         </div>
     </div>
 
-    <!-- Firebase SDK v8 (Legacy) -->
+    <!-- Firebase SDK v8 (Legacy) for Chat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config -->
-    <script src="../assets/js/firebase-config.js"></script>
+    <!-- Hybrid Auth System -->
+    <script src="../assets/js/hybrid-auth.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         const roomId = '<?php echo $room_id; ?>';
+        const currentUser = <?php echo json_encode($currentUser); ?>;
         let currentRoom = null;
-        let currentUser = null;
         let messagesRef = null;
         let typingRef = null;
         let typingTimeout = null;
@@ -352,19 +363,8 @@ $page_title = 'Chat Room - Chat Room Realtime';
         
         // Initialize chat
         document.addEventListener('DOMContentLoaded', function() {
-            if (!isAuthenticated()) {
-                window.location.href = '../index.php';
-                return;
-            }
-            
-            currentUser = getCurrentUser();
-            if (!currentUser) {
-                window.location.href = '../index.php';
-                return;
-            }
-            
             if (!roomId) {
-                showNotification('Room ID is required', 'error');
+                hybridAuth.showNotification('Room ID is required', 'error');
                 goBack();
                 return;
             }
@@ -393,17 +393,17 @@ $page_title = 'Chat Room - Chat Room Realtime';
         }
         
         function updateUserInfo() {
-            document.getElementById('userName').textContent = currentUser.displayName || currentUser.email.split('@')[0];
-            document.getElementById('userAvatar').textContent = (currentUser.displayName || currentUser.email).charAt(0).toUpperCase();
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
         }
         
         function loadRoomInfo() {
-            const roomRef = database.ref('rooms/' + roomId);
+            const roomRef = hybridAuth.firebase.database.ref('rooms/' + roomId);
             
             roomRef.on('value', (snapshot) => {
                 const room = snapshot.val();
                 if (!room) {
-                    showNotification('Room not found', 'error');
+                    hybridAuth.showNotification('Room not found', 'error');
                     goBack();
                     return;
                 }
@@ -414,8 +414,9 @@ $page_title = 'Chat Room - Chat Room Realtime';
                 document.getElementById('memberCount').textContent = Object.keys(room.members || {}).length;
                 
                 // Check if user is member
-                if (!room.members || !room.members[currentUser.uid]) {
-                    showNotification('You are not a member of this room', 'error');
+                const firebaseUser = hybridAuth.getCurrentUserForFirebase();
+                if (!room.members || !room.members[firebaseUser.uid]) {
+                    hybridAuth.showNotification('You are not a member of this room', 'error');
                     goBack();
                     return;
                 }
@@ -424,32 +425,48 @@ $page_title = 'Chat Room - Chat Room Realtime';
         
         async function joinChatRoom() {
             try {
-                await joinRoom(roomId);
+                await hybridAuth.joinRoom(roomId);
             } catch (error) {
                 console.error('Join room error:', error);
-                showNotification('Failed to join room: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to join room: ' + error.message, 'error');
             }
         }
         
         function setupMessageListeners() {
-            messagesRef = database.ref('messages/' + roomId);
+            // Use hybrid auth to get messages
+            hybridAuth.getRoomMessages(roomId, (messages) => {
+                displayMessages(messages);
+            });
+        }
+        
+        function displayMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
             
-            messagesRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
-                displayMessage({
-                    id: snapshot.key,
-                    ...message
-                });
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-chat-dots"></i>
+                        <h5>No messages yet</h5>
+                        <p>Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            messages.forEach(message => {
+                displayMessage(message);
             });
         }
         
         function setupTypingListeners() {
-            typingRef = database.ref('typing/' + roomId);
+            const firebaseUser = hybridAuth.getCurrentUserForFirebase();
+            typingRef = hybridAuth.firebase.database.ref('typing/' + roomId);
             
             typingRef.on('value', (snapshot) => {
                 const typing = snapshot.val();
                 if (typing) {
-                    const typingUsers = Object.keys(typing).filter(uid => uid !== currentUser.uid && typing[uid]);
+                    const typingUsers = Object.keys(typing).filter(uid => uid !== firebaseUser.uid && typing[uid]);
                     if (typingUsers.length > 0) {
                         showTypingIndicator(typingUsers);
                     } else {
@@ -497,6 +514,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
         
         function displayMessage(message) {
             const messagesContainer = document.getElementById('chatMessages');
+            const firebaseUser = hybridAuth.getCurrentUserForFirebase();
             
             // Remove empty state if exists
             const emptyState = messagesContainer.querySelector('.empty-state');
@@ -505,7 +523,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             }
             
             const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.senderId === currentUser.uid ? 'own' : ''}`;
+            messageElement.className = `message ${message.senderId === firebaseUser.uid ? 'own' : ''}`;
             messageElement.id = 'message-' + message.id;
             
             const avatar = document.createElement('div');
@@ -519,7 +537,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
             header.className = 'message-header';
             header.innerHTML = `
                 <span class="message-sender">${message.senderName || 'User'}</span>
-                <span class="message-time">${formatTimestamp(message.timestamp)}</span>
+                <span class="message-time">${hybridAuth.formatTimestamp(message.timestamp)}</span>
             `;
             
             const text = document.createElement('p');
@@ -563,7 +581,8 @@ $page_title = 'Chat Room - Chat Room Realtime';
         
         function updateTypingStatus(typing) {
             if (typingRef) {
-                typingRef.child(currentUser.uid).set(typing);
+                const firebaseUser = hybridAuth.getCurrentUserForFirebase();
+                typingRef.child(firebaseUser.uid).set(typing);
             }
         }
         
@@ -574,12 +593,12 @@ $page_title = 'Chat Room - Chat Room Realtime';
             if (!text) return;
             
             try {
-                await sendMessage(roomId, text);
+                await hybridAuth.sendMessage(roomId, text);
                 messageInput.value = '';
                 updateTypingStatus(false);
             } catch (error) {
                 console.error('Send message error:', error);
-                showNotification('Failed to send message: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to send message: ' + error.message, 'error');
             }
         }
         
@@ -588,13 +607,13 @@ $page_title = 'Chat Room - Chat Room Realtime';
             
             // Validate file size (5MB max)
             if (file.size > 5 * 1024 * 1024) {
-                showNotification('File size must be less than 5MB', 'error');
+                hybridAuth.showNotification('File size must be less than 5MB', 'error');
                 return;
             }
             
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                showNotification('Please select an image file', 'error');
+                hybridAuth.showNotification('Please select an image file', 'error');
                 return;
             }
             
@@ -604,20 +623,20 @@ $page_title = 'Chat Room - Chat Room Realtime';
                 const progressBar = progressContainer.querySelector('.progress-bar');
                 progressContainer.classList.add('show');
                 
-                // Upload image
-                const imageUrl = await uploadImage(file, roomId);
+                // Upload image using hybrid auth
+                const imageUrl = await hybridAuth.uploadImage(file);
                 
                 // Send message with image
-                await sendMessage(roomId, '', imageUrl);
+                await hybridAuth.sendMessage(roomId, '', imageUrl);
                 
                 // Hide progress
                 progressContainer.classList.remove('show');
                 progressBar.style.width = '0%';
                 
-                showNotification('Image uploaded successfully!', 'success');
+                hybridAuth.showNotification('Image uploaded successfully!', 'success');
             } catch (error) {
                 console.error('Upload error:', error);
-                showNotification('Failed to upload image: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to upload image: ' + error.message, 'error');
                 
                 // Hide progress
                 document.getElementById('uploadProgress').classList.remove('show');
@@ -625,8 +644,7 @@ $page_title = 'Chat Room - Chat Room Realtime';
         }
         
         function goBack() {
-            const userRole = getUserRole();
-            if (userRole === 'teacher') {
+            if (currentUser.role === 'teacher') {
                 window.location.href = '../dashboard/teacher/index.php';
             } else {
                 window.location.href = '../dashboard/student/index.php';
@@ -636,7 +654,8 @@ $page_title = 'Chat Room - Chat Room Realtime';
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
             if (typingRef) {
-                typingRef.child(currentUser.uid).remove();
+                const firebaseUser = hybridAuth.getCurrentUserForFirebase();
+                typingRef.child(firebaseUser.uid).remove();
             }
         });
     </script>

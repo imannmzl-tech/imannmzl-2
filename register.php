@@ -1,6 +1,17 @@
 <?php
 require_once 'config/config.php';
-require_once 'config/firebase-config.php';
+require_once 'config/auth-hybrid.php';
+
+// Jika sudah login, redirect ke dashboard
+if (isLoggedIn()) {
+    $user = getCurrentUser();
+    if ($user['role'] === 'teacher') {
+        header('Location: dashboard/teacher/index.php');
+    } else {
+        header('Location: dashboard/student/index.php');
+    }
+    exit;
+}
 
 $page_title = 'Register - Chat Room Realtime';
 ?>
@@ -338,29 +349,21 @@ $page_title = 'Register - Chat Room Realtime';
         </div>
     </div>
 
-    <!-- Firebase SDK v8 (Legacy) -->
+    <!-- Firebase SDK v8 (Legacy) for Chat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config -->
-    <script src="assets/js/firebase-config.js"></script>
+    <!-- Hybrid Auth System -->
+    <script src="assets/js/hybrid-auth.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Show alert function
+        // Show alert function (using hybrid auth notification)
         function showAlert(message, type = 'danger') {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            alertContainer.innerHTML = alertHtml;
+            hybridAuth.showNotification(message, type === 'danger' ? 'error' : type);
         }
         
         // Role selection handler
@@ -385,53 +388,40 @@ $page_title = 'Register - Chat Room Realtime';
             
             // Validation
             if (!name || !email || !password || !confirmPassword || !role) {
-                showAlert('Please fill in all fields');
+                showAlert('Please fill in all fields', 'error');
                 return;
             }
             
             if (password !== confirmPassword) {
-                showAlert('Passwords do not match');
+                showAlert('Passwords do not match', 'error');
                 return;
             }
             
             if (password.length < 6) {
-                showAlert('Password must be at least 6 characters long');
+                showAlert('Password must be at least 6 characters long', 'error');
                 return;
             }
             
             if (!agreeTerms) {
-                showAlert('Please agree to the Terms of Service and Privacy Policy');
+                showAlert('Please agree to the Terms of Service and Privacy Policy', 'error');
                 return;
             }
             
             try {
                 showAlert('Creating account...', 'info');
                 
-                await signUp(email, password, name, role);
+                const result = await hybridAuth.register(name, email, password, role);
                 
-                showAlert('Account created successfully! Redirecting...', 'success');
+                if (result.success) {
+                    showAlert('Account created successfully! Redirecting...', 'success');
+                    // Auto redirect akan dilakukan oleh hybridAuth.onAuthStateChange
+                } else {
+                    showAlert(result.message, 'error');
+                }
                 
             } catch (error) {
                 console.error('Registration error:', error);
-                
-                let errorMessage = 'Registration failed. Please try again.';
-                
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        errorMessage = 'An account with this email already exists.';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Invalid email address.';
-                        break;
-                    case 'auth/weak-password':
-                        errorMessage = 'Password is too weak. Please choose a stronger password.';
-                        break;
-                    case 'auth/operation-not-allowed':
-                        errorMessage = 'Registration is currently disabled.';
-                        break;
-                }
-                
-                showAlert(errorMessage);
+                showAlert('Registration failed: ' + error.message, 'error');
             }
         });
     </script>

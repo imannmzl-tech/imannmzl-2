@@ -1,7 +1,13 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../config/auth-hybrid.php';
+
+// Require authentication and teacher role
+requireLogin();
+requireRole('teacher');
 
 $page_title = 'Teacher Dashboard - Chat Room Realtime';
+$currentUser = getCurrentUser();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -367,24 +373,13 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
         </div>
     </div>
 
-    <!-- Firebase SDK v8 (Legacy) -->
+    <!-- Firebase SDK v8 (Legacy) for Chat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config -->
-    <script src="../../assets/js/firebase-config.js"></script>
-    
-    <script>
-        // Helper functions specific to teacher dashboard
-        function signOut() {
-            auth.signOut().then(() => {
-                window.location.href = '../../login.php';
-            }).catch((error) => {
-                console.error('Sign out error:', error);
-            });
-        }
-    </script>
+    <!-- Hybrid Auth System -->
+    <script src="../../assets/js/hybrid-auth.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -392,31 +387,11 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
     <script>
         let userRooms = [];
         let allUsers = [];
+        const currentUser = <?php echo json_encode($currentUser); ?>;
         
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for auth to initialize
-            const checkAuth = () => {
-                if (!isAuthenticated()) {
-                    setTimeout(checkAuth, 100);
-                    return;
-                }
-                
-                // Check if user is teacher
-                getUserRole().then(role => {
-                    if (role !== 'teacher') {
-                        window.location.href = '../student/index.php';
-                        return;
-                    }
-                    
-                    initializeDashboard();
-                }).catch(error => {
-                    console.error('Error checking role:', error);
-                    window.location.href = '../../login.php';
-                });
-            };
-            
-            checkAuth();
+            initializeDashboard();
         });
         
         function initializeDashboard() {
@@ -434,11 +409,8 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
         }
         
         function updateUserInfo() {
-            const user = getCurrentUser();
-            if (user) {
-                document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
-                document.getElementById('userAvatar').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-            }
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
         }
         
         function loadDashboardData() {
@@ -448,25 +420,14 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
         }
         
         function loadUserRooms() {
-            const user = getCurrentUser();
-            if (!user) return;
-            
-            const roomsRef = database.ref('rooms');
-            
-            roomsRef.on('value', (snapshot) => {
-                const rooms = [];
-                snapshot.forEach((childSnapshot) => {
-                    const room = childSnapshot.val();
-                    if (room.createdBy === user.uid) {
-                        rooms.push({
-                            id: childSnapshot.key,
-                            ...room
-                        });
-                    }
-                });
+            // Get user rooms from Firebase using hybrid auth
+            hybridAuth.getUserRooms((rooms) => {
+                // Filter rooms created by current user (teacher)
+                const firebaseUser = hybridAuth.getCurrentUserForFirebase();
+                const teacherRooms = rooms.filter(room => room.createdBy === firebaseUser.uid);
                 
-                userRooms = rooms;
-                displayRooms(rooms);
+                userRooms = teacherRooms;
+                displayRooms(teacherRooms);
                 updateStats();
             });
         }
@@ -655,13 +616,13 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
             const description = document.getElementById('roomDescription').value;
             
             try {
-                const roomId = await createRoom(name, description);
-                showNotification('Room created successfully!', 'success');
+                const roomId = await hybridAuth.createRoom(name, description);
+                hybridAuth.showNotification('Room created successfully!', 'success');
                 document.getElementById('createRoomForm').reset();
                 showTab('rooms');
             } catch (error) {
                 console.error('Create room error:', error);
-                showNotification('Failed to create room: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to create room: ' + error.message, 'error');
             }
         });
         
@@ -670,18 +631,18 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
             const description = document.getElementById('modalRoomDescription').value;
             
             if (!name.trim()) {
-                showNotification('Room name is required', 'error');
+                hybridAuth.showNotification('Room name is required', 'error');
                 return;
             }
             
-            createRoom(name, description).then(roomId => {
-                showNotification('Room created successfully!', 'success');
+            hybridAuth.createRoom(name, description).then(roomId => {
+                hybridAuth.showNotification('Room created successfully!', 'success');
                 document.getElementById('modalCreateRoomForm').reset();
                 bootstrap.Modal.getInstance(document.getElementById('createRoomModal')).hide();
                 showTab('rooms');
             }).catch(error => {
                 console.error('Create room error:', error);
-                showNotification('Failed to create room: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to create room: ' + error.message, 'error');
             });
         }
         
@@ -691,14 +652,25 @@ $page_title = 'Teacher Dashboard - Chat Room Realtime';
         
         function deleteRoom(roomId) {
             if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                const roomRef = database.ref('rooms/' + roomId);
-                const messagesRef = database.ref('messages/' + roomId);
+                const roomRef = hybridAuth.firebase.database.ref('rooms/' + roomId);
+                const messagesRef = hybridAuth.firebase.database.ref('messages/' + roomId);
                 
                 // Delete room and messages
                 roomRef.remove();
                 messagesRef.remove();
                 
-                showNotification('Room deleted successfully', 'success');
+                hybridAuth.showNotification('Room deleted successfully', 'success');
+            }
+        }
+        
+        // Logout function
+        async function signOut() {
+            try {
+                await hybridAuth.logout();
+                window.location.href = '../../login.php';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '../../login.php';
             }
         }
     </script>

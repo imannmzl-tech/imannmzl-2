@@ -1,6 +1,17 @@
 <?php
 require_once 'config/config.php';
-require_once 'config/firebase-config.php';
+require_once 'config/auth-hybrid.php';
+
+// Jika sudah login, redirect ke dashboard
+if (isLoggedIn()) {
+    $user = getCurrentUser();
+    if ($user['role'] === 'teacher') {
+        header('Location: dashboard/teacher/index.php');
+    } else {
+        header('Location: dashboard/student/index.php');
+    }
+    exit;
+}
 
 $page_title = 'Login - Chat Room Realtime';
 ?>
@@ -265,29 +276,21 @@ $page_title = 'Login - Chat Room Realtime';
         </div>
     </div>
 
-    <!-- Firebase SDK v8 (Legacy) -->
+    <!-- Firebase SDK v8 (Legacy) for Chat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config -->
-    <script src="assets/js/firebase-config.js"></script>
+    <!-- Hybrid Auth System -->
+    <script src="assets/js/hybrid-auth.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Show alert function
+        // Show alert function (using hybrid auth notification)
         function showAlert(message, type = 'danger') {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            alertContainer.innerHTML = alertHtml;
+            hybridAuth.showNotification(message, type === 'danger' ? 'error' : type);
         }
         
         // Login form handler
@@ -298,41 +301,25 @@ $page_title = 'Login - Chat Room Realtime';
             const password = document.getElementById('loginPassword').value;
             
             if (!email || !password) {
-                showAlert('Please fill in all fields');
+                showAlert('Please fill in all fields', 'error');
                 return;
             }
             
             try {
                 showAlert('Signing in...', 'info');
                 
-                await signIn(email, password);
+                const result = await hybridAuth.login(email, password);
                 
-                showAlert('Login successful! Redirecting...', 'success');
+                if (result.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    // Auto redirect akan dilakukan oleh hybridAuth.onAuthStateChange
+                } else {
+                    showAlert(result.message, 'error');
+                }
                 
             } catch (error) {
                 console.error('Login error:', error);
-                
-                let errorMessage = 'Login failed. Please try again.';
-                
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        errorMessage = 'No account found with this email address.';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage = 'Incorrect password. Please try again.';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Invalid email address.';
-                        break;
-                    case 'auth/user-disabled':
-                        errorMessage = 'This account has been disabled.';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Too many failed attempts. Please try again later.';
-                        break;
-                }
-                
-                showAlert(errorMessage);
+                showAlert('Login failed: ' + error.message, 'error');
             }
         });
     </script>
