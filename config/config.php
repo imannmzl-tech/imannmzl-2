@@ -5,8 +5,16 @@
 
 // Application Configuration
 define('APP_NAME', 'Chat Room Realtime');
-define('APP_VERSION', '1.0.0');
+define('APP_VERSION', '2.0.0');
 define('APP_URL', 'https://multinteraktif.online/chat-room-realtime');
+
+// Auto-detect base URL if not set
+if (!defined('BASE_URL')) {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $path = dirname($_SERVER['SCRIPT_NAME']);
+    define('BASE_URL', $protocol . '://' . $host . $path);
+}
 
 // Upload Configuration (PHP Upload - No Firebase Storage needed)
 define('UPLOAD_PATH', 'uploads/chat-images/');
