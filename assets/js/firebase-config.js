@@ -30,7 +30,7 @@ const database = firebase.database();
 let currentUser = null;
 let currentRoom = null;
 
-// Auth state change listener
+// Auth state change listener (centralized)
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
@@ -39,15 +39,28 @@ auth.onAuthStateChanged((user) => {
         // Update user info in database
         updateUserInfo(user);
         
-        // Redirect based on role
-        checkUserRole(user.uid);
+        // Only redirect if we're on auth pages (login/register/index)
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.includes('login.php') || 
+                          currentPath.includes('register.php') || 
+                          currentPath.includes('index.php') ||
+                          currentPath === '/' ||
+                          currentPath.endsWith('/');
+        
+        if (isAuthPage) {
+            checkUserRole(user.uid);
+        }
     } else {
         currentUser = null;
         console.log('❌ User logged out');
         
-        // Redirect to login (only if not on login page)
-        if (!window.location.pathname.includes('index.php') && !window.location.pathname.includes('test-')) {
-            window.location.href = 'index.php';
+        // Only redirect to login if we're on protected pages
+        const currentPath = window.location.pathname;
+        const isProtectedPage = currentPath.includes('dashboard/') || 
+                               currentPath.includes('chat/');
+        
+        if (isProtectedPage) {
+            window.location.href = '/workspace/login.php';
         }
     }
 });
@@ -70,25 +83,32 @@ function updateUserInfo(user) {
     });
 }
 
-// Check user role and redirect
+// Check user role and redirect (only from auth pages)
 function checkUserRole(userId) {
-    // Skip redirect if on test pages or already on correct dashboard
-    if (window.location.pathname.includes('test-') || 
-        window.location.pathname.includes('dashboard/')) {
-        return;
-    }
-    
     const userRef = database.ref('users/' + userId);
     
     userRef.once('value', (snapshot) => {
         const userData = snapshot.val();
         
         if (userData && userData.role) {
-            if (userData.role === 'teacher' && !window.location.pathname.includes('teacher')) {
-                window.location.href = 'dashboard/teacher/index.php';
-            } else if (userData.role === 'student' && !window.location.pathname.includes('student')) {
-                window.location.href = 'dashboard/student/index.php';
+            // Determine the correct path based on current location
+            const currentPath = window.location.pathname;
+            let redirectPath = '';
+            
+            if (currentPath.includes('/workspace/')) {
+                // We're in workspace root
+                redirectPath = userData.role === 'teacher' ? 
+                    '/workspace/dashboard/teacher/index.php' : 
+                    '/workspace/dashboard/student/index.php';
+            } else {
+                // Relative path
+                redirectPath = userData.role === 'teacher' ? 
+                    'dashboard/teacher/index.php' : 
+                    'dashboard/student/index.php';
             }
+            
+            console.log('🔄 Redirecting to:', redirectPath);
+            window.location.href = redirectPath;
         }
     });
 }
@@ -153,7 +173,13 @@ function uploadImage(file, roomId) {
         const formData = new FormData();
         formData.append('image', file);
         
-        fetch(APP_URL + '/api/upload-image.php', {
+        // Get base URL dynamically
+        const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+        const apiUrl = baseUrl.includes('/dashboard/') || baseUrl.includes('/chat/') 
+            ? baseUrl + '/../../api/upload-image.php'
+            : baseUrl + '/api/upload-image.php';
+        
+        fetch(apiUrl, {
             method: 'POST',
             body: formData
         })

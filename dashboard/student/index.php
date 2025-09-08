@@ -1,7 +1,13 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../config/auth-hybrid.php';
+
+// Require authentication and student role
+requireLogin();
+requireRole('student');
 
 $page_title = 'Student Dashboard - Chat Room Realtime';
+$currentUser = getCurrentUser();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -329,58 +335,13 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         </div>
     </div>
 
-    <!-- Firebase SDK v8 (Legacy) -->
+    <!-- Firebase SDK v8 (Legacy) for Chat -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Firebase Config (Direct - No Redirect Logic) -->
-    <script>
-        // Firebase Configuration (Direct - No redirect logic)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBsWwXT8vZ3Y_G_HxLXCOucy8trXZ8vXog",
-            authDomain: "chat-room-realtime.firebaseapp.com",
-            databaseURL: "https://chat-room-realtime-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "chat-room-realtime",
-            storageBucket: "chat-room-realtime.firebasestorage.app",
-            messagingSenderId: "952502420326",
-            appId: "1:952502420326:web:a8d939bbb6c3dbefdbbea7"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-        
-        // Global variables
-        let currentUser = null;
-        
-        // Auth state listener (simplified)
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                console.log('✅ User authenticated:', user.email);
-            } else {
-                currentUser = null;
-                console.log('❌ User logged out');
-                // Redirect to login page
-                window.location.href = '../../login.php';
-            }
-        });
-        
-        // Helper functions
-        function isAuthenticated() {
-            return currentUser !== null;
-        }
-        
-        function signOut() {
-            auth.signOut().then(() => {
-                window.location.href = '../../login.php';
-            }).catch((error) => {
-                console.error('Sign out error:', error);
-            });
-        }
-    </script>
+    <!-- Hybrid Auth System -->
+    <script src="../../assets/js/hybrid-auth.js"></script>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -389,23 +350,11 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         let userRooms = [];
         let allRooms = [];
         let allUsers = [];
+        const currentUser = <?php echo json_encode($currentUser); ?>;
         
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            if (!isAuthenticated()) {
-                window.location.href = '../../index.php';
-                return;
-            }
-            
-            // Check if user is student
-            getUserRole().then(role => {
-                if (role !== 'student') {
-                    window.location.href = '../teacher/index.php';
-                    return;
-                }
-                
-                initializeDashboard();
-            });
+            initializeDashboard();
         });
         
         function initializeDashboard() {
@@ -423,11 +372,8 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         }
         
         function updateUserInfo() {
-            const user = getCurrentUser();
-            if (user) {
-                document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
-                document.getElementById('userAvatar').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
-            }
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
         }
         
         function loadDashboardData() {
@@ -438,23 +384,8 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         }
         
         function loadUserRooms() {
-            const user = getCurrentUser();
-            if (!user) return;
-            
-            const roomsRef = database.ref('rooms');
-            
-            roomsRef.on('value', (snapshot) => {
-                const rooms = [];
-                snapshot.forEach((childSnapshot) => {
-                    const room = childSnapshot.val();
-                    if (room.members && room.members[user.uid]) {
-                        rooms.push({
-                            id: childSnapshot.key,
-                            ...room
-                        });
-                    }
-                });
-                
+            // Get user rooms from Firebase using hybrid auth
+            hybridAuth.getUserRooms((rooms) => {
                 userRooms = rooms;
                 displayUserRooms(rooms);
                 updateStats();
@@ -462,7 +393,7 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         }
         
         function loadAllRooms() {
-            const roomsRef = database.ref('rooms');
+            const roomsRef = hybridAuth.firebase.database.ref('rooms');
             
             roomsRef.on('value', (snapshot) => {
                 const rooms = [];
@@ -575,10 +506,10 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         
         function displayAvailableRooms(rooms) {
             const container = document.getElementById('availableRooms');
-            const user = getCurrentUser();
+            const firebaseUser = hybridAuth.getCurrentUserForFirebase();
             
             // Filter rooms that user hasn't joined
-            const availableRooms = rooms.filter(room => !room.members || !room.members[user.uid]);
+            const availableRooms = rooms.filter(room => !room.members || !room.members[firebaseUser.uid]);
             
             if (availableRooms.length === 0) {
                 container.innerHTML = `
@@ -698,35 +629,36 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
             const roomCode = document.getElementById('roomCode').value.trim();
             
             if (!roomCode) {
-                showNotification('Please enter a room code', 'error');
+                hybridAuth.showNotification('Please enter a room code', 'error');
                 return;
             }
             
             try {
                 await joinRoomById(roomCode);
-                showNotification('Successfully joined room!', 'success');
+                hybridAuth.showNotification('Successfully joined room!', 'success');
                 document.getElementById('joinRoomForm').reset();
                 showTab('rooms');
             } catch (error) {
                 console.error('Join room error:', error);
-                showNotification('Failed to join room: ' + error.message, 'error');
+                hybridAuth.showNotification('Failed to join room: ' + error.message, 'error');
             }
         });
         
         async function joinRoomById(roomId) {
-            const user = getCurrentUser();
-            if (!user) return;
-            
-            // Check if room exists
-            const roomRef = database.ref('rooms/' + roomId);
-            const roomSnapshot = await roomRef.once('value');
-            
-            if (!roomSnapshot.exists()) {
-                throw new Error('Room not found');
+            try {
+                // Check if room exists
+                const roomRef = hybridAuth.firebase.database.ref('rooms/' + roomId);
+                const roomSnapshot = await roomRef.once('value');
+                
+                if (!roomSnapshot.exists()) {
+                    throw new Error('Room not found');
+                }
+                
+                // Join room using hybrid auth
+                await hybridAuth.joinRoom(roomId);
+            } catch (error) {
+                throw error;
             }
-            
-            // Join room
-            await joinRoom(roomId);
         }
         
         function joinRoom(roomId) {
@@ -736,12 +668,23 @@ $page_title = 'Student Dashboard - Chat Room Realtime';
         async function leaveRoom(roomId) {
             if (confirm('Are you sure you want to leave this room?')) {
                 try {
-                    await leaveRoom(roomId);
-                    showNotification('Left room successfully', 'success');
+                    await hybridAuth.leaveRoom(roomId);
+                    hybridAuth.showNotification('Left room successfully', 'success');
                 } catch (error) {
                     console.error('Leave room error:', error);
-                    showNotification('Failed to leave room: ' + error.message, 'error');
+                    hybridAuth.showNotification('Failed to leave room: ' + error.message, 'error');
                 }
+            }
+        }
+        
+        // Logout function
+        async function signOut() {
+            try {
+                await hybridAuth.logout();
+                window.location.href = '../../login.php';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '../../login.php';
             }
         }
     </script>
