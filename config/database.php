@@ -10,9 +10,9 @@
 
 // Database Configuration - Sesuaikan dengan hosting Anda
 define('DB_HOST', 'localhost');        // Host database (biasanya localhost)
-define('DB_NAME', 'chat_room_db');     // Nama database Anda
-define('DB_USER', 'root');             // Username database
-define('DB_PASS', '');                 // Password database
+define('DB_NAME', 'n1567943_chat-room-realtime_db');     // Nama database Anda
+define('DB_USER', 'n1567943_chat-room-realtime_user');   // Username database
+define('DB_PASS', 'Gitar222@@@');      // Password database
 define('DB_CHARSET', 'utf8mb4');
 
 // Error reporting untuk development (disable di production)
