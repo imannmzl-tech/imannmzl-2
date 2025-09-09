@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pengenalan Komprehensif Algoritma</title>
+    <meta name="description" content="Materi pengenalan algoritma: definisi, asal-usul, contoh sehari-hari, aktivitas menyulam, hubungan dengan informatika, dan manfaat." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1f2937; /* gray-800 */
+            --muted: #6b7280; /* gray-500 */
+            --border: #e5e7eb; /* gray-200 */
+            --accent: #0ea5e9; /* sky-500 */
+            --accent-600: #0284c7; /* sky-600 */
+            --surface: #f8fafc; /* slate-50 */
+            --success: #10b981; /* emerald-500 */
+            --warning: #f59e0b; /* amber-500 */
+        }
+
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.65;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header.hero {
+            padding: 36px 0 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--accent-600);
+            background: rgba(14,165,233,0.1);
+            border: 1px solid rgba(14,165,233,0.2);
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+
+        h1 {
+            margin: 12px 0 8px;
+            font-size: clamp(28px, 4vw, 40px);
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: clamp(14px, 2.2vw, 18px);
+            margin: 0 0 8px;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+        @media (min-width: 900px) {
+            .grid.two { grid-template-columns: 1.2fr 1fr; }
+        }
+
+        section.card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        section.card h2 {
+            margin: 0 0 10px;
+            font-size: 22px;
+        }
+
+        section.card h3 {
+            margin: 20px 0 8px;
+            font-size: 18px;
+        }
+
+        p { margin: 8px 0; }
+        ul { margin: 8px 0 8px 18px; }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 */
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #000;
+        }
+        .video-wrapper iframe {
+            position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        .figure {
+            border: 1px dashed var(--border);
+            background: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .figure img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .caption {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .highlight {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background: #0ea5e90d;
+            color: #0f172a;
+            border: 1px solid rgba(2,132,199,0.25);
+            padding: 2px 6px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0 0;
+        }
+        .pill {
+            border: 1px solid var(--border);
+            background: #fff;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+            padding: 20px 0 40px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        a { color: var(--accent-600); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+    
+</head>
+<body>
+    <div class="container">
+        <header class="hero">
+            <span class="badge">Materi Informatika</span>
+            <h1>Pengenalan Komprehensif Algoritma</h1>
+            <p class="subtitle">Memahami definisi, asal-usul, contoh sehari-hari, aktivitas praktis, dan manfaat algoritma.</p>
+            <p class="meta">Tema: putih bersih dengan aksen biru; dirancang responsif untuk ponsel dan desktop.</p>
+        </header>
+
+        <div class="grid two">
+            <section class="card">
+                <h2>1. Definisi dan Konsep Dasar Algoritma</h2>
+                <p>Algoritma adalah serangkaian langkah yang terdefinisi dengan baik dan berurutan yang dirancang untuk menyelesaikan suatu masalah atau melakukan tugas tertentu. Konsep ini digunakan dalam ilmu komputer dan juga dalam kehidupan sehari-hari.</p>
+
+                <h3>Video Pembelajaran</h3>
+                <div class="video-wrapper" aria-label="Video pembelajaran algoritma">
+                    <iframe src="https://www.youtube.com/embed/YoTEWA21AJ0" title="Pengenalan Algoritma" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>2. Asal-usul Kata Algoritma</h2>
+                <p>Istilah "algoritma" berasal dari nama matematikawan Persia, <strong>Muhammad Ibnu Musa al-Khawarizmi</strong>. Karyanya menjadi fondasi bagi banyak prinsip matematika dan komputasi modern.</p>
+
+                <h2 style="margin-top:16px;">3. Algoritma dalam Kehidupan Sehari-hari</h2>
+                <ul>
+                    <li><strong>Proses Bersiap ke Sekolah</strong>: bangun, mandi, berpakaian, sarapan, berangkat.</li>
+                    <li><strong>Membuat Secangkir Teh</strong>: rebus air, masukkan teh, tambahkan gula, aduk.</li>
+                </ul>
+            </section>
+        </div>
+
+        <section class="card">
+            <h2>4. Penerapan Praktis: Aktivitas "Belajar Menyulam"</h2>
+            <p>Gunakan aktivitas <em>BK-K8-06-U: Belajar Menyulam</em> untuk memahami penerapan algoritma. Inti perintah:</p>
+            <div class="highlight">
+                <p><span class="code">M(cc)</span> = Masuk (menusukkan jarum ke posisi <em>cc</em>)<br>
+                <span class="code">K(dd)</span> = Keluar (mengeluarkan jarum dari posisi <em>dd</em>)</p>
+                <p>Contoh: <span class="code">K(B2)</span> kemudian <span class="code">M(A3)</span>.</p>
+            </div>
+
+            <p>Jika diberikan dua perintah <span class="code">K(E6)-M(G8)</span>; <span class="code">K(E2)-M(E4)</span>, hasil sulaman sebagai berikut.</p>
+            <div class="grid" style="margin-top:12px;">
+                <div class="figure">
+                    <img src="gambar1.png" alt="Hasil sulaman untuk dua perintah K(E6)-M(G8); K(E2)-M(E4)">
+                    <div class="caption">Gambar 1. Contoh hasil sulaman</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:18px;">Tantangan</h3>
+            <p>Perintah apa yang harus dituliskan untuk menghasilkan sulaman berikut?</p>
+            <div class="grid">
+                <div class="figure"><img src="gambar2.png" alt="Tantangan sulaman 1"><div class="caption">Gambar 2. Tantangan pola</div></div>
+                <div class="figure"><img src="gambar3.png" alt="Tantangan sulaman 2"><div class="caption">Gambar 3. Tantangan pola</div></div>
+            </div>
+
+            <h3 style="margin-top:18px;">Tujuan</h3>
+            <p>Siswa membuat pola sulaman tertentu dengan mengikuti serangkaian perintah atau langkah-langkah.</p>
+
+            <h3 style="margin-top:18px;">Contoh Perintah</h3>
+            <p>Untuk menghasilkan pola yang benar, diperlukan empat perintah spesifik, misalnya:</p>
+            <ul>
+                <li><span class="code">K(C3)-M(H9)</span></li>
+                <li><span class="code">K(H3)-M(C9)</span></li>
+                <li><em>+ dua perintah lain yang tepat (urutannya fleksibel)</em></li>
+            </ul>
+
+            <div class="pill-list" aria-label="Konsep terkait">
+                <span class="pill">Baris</span>
+                <span class="pill">Kolom</span>
+                <span class="pill">Sel (perpotongan baris-kolom)</span>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>5. Hubungan Algoritma dengan Informatika dan Teknologi</h2>
+            <p><strong>Transformasi Menjadi Program</strong>: Algoritma mendefinisikan langkah-langkah penyelesaian pekerjaan yang dapat ditransformasikan menjadi program dan dieksekusi oleh mesin.</p>
+            <p><strong>Contoh Dunia Nyata</strong>: Robot adalah mesin yang diprogram untuk keperluan khusus. Algoritma menyulam dapat diberikan kepada robot penyulam agar menghasilkan sulaman persis sesuai harapan.</p>
+        </section>
+
+        <section class="card">
+            <h2>6. Manfaat dan Pengembangan Keterampilan</h2>
+            <p>Mempelajari algoritma mengasah kemampuan Profil Pelajar Pancasila, seperti bernalar kritis dan kreatif.</p>
+            <ul>
+                <li><strong>Pemecahan Masalah</strong>: meningkatkan kemampuan pemecahan masalah dan logika.</li>
+                <li><strong>Pengembangan Aktivitas</strong>: buat pola lebih rumit, tulis algoritma untuk inisial nama, diskusikan solusi, atau lakukan permainan tebak kata berbasis algoritma.</li>
+            </ul>
+        </section>
+
+        <footer>
+            <div>© 2025 Materi Algoritma. Dibuat untuk tampilan mobile dan desktop.</div>
+        </footer>
+    </div>
+</body>
+</html>
+
