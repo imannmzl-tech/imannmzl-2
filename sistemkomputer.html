@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape The Glitch: Full Story (6 Levels)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: white;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounceIn 0.6s cubic-bezier(0.215, 0.610, 0.355, 1.000) both; }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.6); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .animate-shake { animation: shake 0.5s; }
+
+        /* Background Grid */
+        .bg-grid {
+            background-image: linear-gradient(to right, #4f4f4f2e 1px, transparent 1px),
+                              linear-gradient(to bottom, #4f4f4f2e 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Utilities */
+        .btn {
+            transition: all 0.2s;
+            border-bottom-width: 4px;
+        }
+        .btn:active {
+            transform: scale(0.95);
+            border-bottom-width: 0px;
+            margin-top: 4px;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Layer -->
+    <div class="absolute inset-0 opacity-20 pointer-events-none bg-grid z-0"></div>
+
+    <!-- Main App Container -->
+    <div id="app" class="relative z-10 w-full h-screen flex flex-col overflow-hidden">
+        <!-- Content injected by JS -->
+    </div>
+
+    <script>
+        // --- DATA ---
+        const GAME_DATA = {
+            intro: [
+                { speaker: "System", text: "BOOT SEQUENCE INITIATED... ERROR! CORE CORRUPTED." },
+                { speaker: "Bit (Bot)", text: "Hei! Kamu mendengarku? Aku Bit. Kamu tersedot masuk ke Mainframe City!" },
+                { speaker: "Bit (Bot)", text: "Virus 'The Corruptor' telah mengunci 6 Sektor Utama. Kamu harus memperbaiki semuanya untuk bisa Log Out." },
+                { speaker: "Bit (Bot)", text: "Waktunya tidak banyak. Mari mulai dari dasar: Komponen Sistem Komputer." }
+            ],
+            // LEVEL 0: KOMPONEN SISTEM KOMPUTER
+            room0: {
+                title: "Level 0: Komponen Sistem Komputer",
+                icon: "circuit-board",
+                intro_dialogue: [
+                    { speaker: "Bit (Bot)", text: "Sebelum kita mulai, mari pahami dulu komponen sistem komputer!" },
+                    { speaker: "Bit (Bot)", text: "Sistem komputer punya analogi menarik dengan sistem pencernaan manusia." }
+                ],
+                lessons: [
+                    { title: "Tiga Komponen Utama", content: "Sistem komputer terdiri dari: Hardware (perangkat keras), Software (perangkat lunak), dan Brainware (pengguna). Ketiganya saling bekerja sama.", icon: "layers" },
+                    { title: "Analogi Sistem Pencernaan", content: "Input = Makan (data masuk). Process = Pencernaan di lambung (CPU memproses). Storage = Disimpan di usus (harddisk). Output = Buang sisa (monitor/printer).", icon: "activity" },
+                    { title: "Alur Sistem Komputer", content: "Alur lengkap: Input (Keyboard/Mouse) → Process (CPU) → Storage (Harddisk) → Output (Monitor/Printer). Setiap tahap penting untuk sistem bekerja.", icon: "arrow-right" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "Hahaha! Kau belum paham alur sistem? Aku akan mengacaukannya!" },
+                    { speaker: "The Glitch Wizard", text: "Susun alur sistem komputer dengan benar, atau kau akan terjebak selamanya!" }
+                ]
+            },
+            // LEVEL 1: HARDWARE
+            room1: {
+                title: "Level 1: Hardware Hangar",
+                icon: "box",
+                intro_dialogue: [
+                    { speaker: "Mr. Circuit", text: "Selamat datang di Hangar. Saya Mr. Circuit. Komputer itu butuh tubuh fisik, namanya Hardware." },
+                    { speaker: "Mr. Circuit", text: "Tanpa Hardware, software tidak punya tempat tinggal." }
+                ],
+                lessons: [
+                    { title: "Definisi Hardware", content: "Perangkat Keras (Hardware) adalah komponen komputer yang bisa dilihat dan disentuh secara fisik.", icon: "box" },
+                    { title: "Input & Output", content: "Input: Masuk (Keyboard, Mic). Output: Keluar (Monitor, Speaker).", icon: "arrow-right-left" },
+                    { title: "Process", content: "Otak komputer. CPU (Central Processing Unit) memproses semua perintah.", icon: "cpu" },
+                    { title: "Input Modern", content: "Touchscreen (smartphone/smartwatch), Sensor giroskop (smartwatch), Sensor inframerah (smart TV), Microphone untuk suara.", icon: "touchpad" },
+                    { title: "Output Modern", content: "Antena smartphone (gelombang radio), Robot actuator (gerakan mekanis), Remote control (sinyal IR untuk TV/AC/pintu pagar).", icon: "radio" },
+                    { title: "Detail Processor", content: "Control Unit: Mengendalikan semua perangkat. ALU: Mengolah data aritmatika & logika. Register: Memori kecil super cepat untuk data sementara.", icon: "cpu" },
+                    { title: "Cloud Storage", content: "Penyimpanan awan: Google Drive, OneDrive, DropBox. Data tersimpan di internet, bisa diakses dari mana saja, bisa kolaborasi real-time.", icon: "cloud" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "Hahaha! Kabel-kabel ini milikku! Aku akan memutuskan semua koneksi!" },
+                    { speaker: "The Glitch Wizard", text: "Buktikan kau tahu fungsi alat-alat ini, atau terkurung selamanya!" }
+                ]
+            },
+            // LEVEL 2: SOFTWARE
+            room2: {
+                title: "Level 2: Software Studio",
+                icon: "layers",
+                intro_dialogue: [
+                    { speaker: "Miss App", text: "Bagus! Sekarang kita di Software Studio. Tubuh (Hardware) butuh Jiwa (Software)." },
+                    { speaker: "Miss App", text: "Software adalah kumpulan instruksi/kode yang memberitahu hardware apa yang harus dilakukan." }
+                ],
+                lessons: [
+                    { title: "Sistem Operasi (OS)", content: "Software Induk. Mengatur hardware & software lain. Contoh: Windows, Android, MacOS.", icon: "settings" },
+                    { title: "Aplikasi", content: "Software bantu kerja. Contoh: Word (Dokumen), Chrome (Browsing), Games.", icon: "app-window" },
+                    { title: "Hierarki", content: "Urutan: Hardware (Bawah) -> OS -> Aplikasi -> User (Atas).", icon: "list-ordered" },
+                    { title: "Cara Kerja OS", content: "1. OS mengirim file/instruksi ke memori. 2. Program meminta data dari disk ke memori. 3. OS mengontrol program. 4. Hasil ditampilkan di output.", icon: "settings-2" },
+                    { title: "Kategori Aplikasi", content: "Word Processor (Word), Spreadsheet (Excel), Database (Access), Presentasi (PowerPoint), Browser (Chrome), Desain (Photoshop), Multimedia (iTunes).", icon: "grid-3x3" },
+                    { title: "Software Pemrograman", content: "Untuk programmer: C++, Visual Basic, Scratch, Python, Pascal. Digunakan untuk menulis, mengembangkan, menguji, dan debug program.", icon: "code" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "Software? Bah! Aku akan mengacak-acak kode sumbernya!" },
+                    { speaker: "The Glitch Wizard", text: "Susun hierarki sistem dengan benar, atau OS-mu akan Blue Screen!" }
+                ]
+            },
+            // LEVEL 3: MEMORY & STORAGE
+            room3: {
+                title: "Level 3: The Memory Maze",
+                icon: "save",
+                intro_dialogue: [
+                    { speaker: "Memo The Librarian", text: "Sstt! Jangan berisik. Ini perpustakaan memori. Ada dua jenis ingatan di sini." },
+                    { speaker: "Memo The Librarian", text: "Satu ingatan pendek (RAM), satu ingatan panjang (Storage)." }
+                ],
+                lessons: [
+                    { title: "RAM (Primary)", content: "Memori Utama. Cepat tapi Sementara (Volatile). Data HILANG saat listrik mati.", icon: "zap" },
+                    { title: "Storage (Secondary)", content: "Penyimpanan Permanen (Non-Volatile). Data TETAP ADA saat mati. Contoh: Harddisk, SSD, Flashdisk.", icon: "hard-drive" },
+                    { title: "Satuan Data", content: "Ukuran data: Byte -> Kilobyte (KB) -> Megabyte (MB) -> Gigabyte (GB) -> Terabyte (TB).", icon: "database" },
+                    { title: "Cloud Storage Detail", content: "Penyimpanan online: Google Drive, OneDrive, DropBox. Keuntungan: Backup otomatis, akses dari mana saja, kolaborasi real-time, aman dari kerusakan fisik.", icon: "cloud" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "Aku akan mencabut kabel power! Biar semua ingatanmu lenyap!" },
+                    { speaker: "The Glitch Wizard", text: "Mana yang akan selamat dari mati lampu? Pilih dengan bijak!" }
+                ]
+            },
+            // LEVEL 4: BINARY & DATA
+            room4: {
+                title: "Level 4: The Logic Lab",
+                icon: "binary",
+                intro_dialogue: [
+                    { speaker: "Agent Zero", text: "Selamat datang di inti logika. Di sini, kami hanya bicara dua kata: Ya atau Tidak, 1 atau 0." },
+                    { speaker: "Agent Zero", text: "Ini adalah Sistem Biner (Binary), bahasa asli komputer." }
+                ],
+                lessons: [
+                    { title: "Sistem Biner", content: "Komputer hanya mengerti angka 0 (Mati/Off) dan 1 (Hidup/On).", icon: "toggle-left" },
+                    { title: "Bit & Byte", content: "1 Bit = satu angka (0 atau 1). 8 Bit = 1 Byte (satu karakter huruf).", icon: "hash" },
+                    { title: "Konversi", content: "Nilai tempat biner: 4, 2, 1. Contoh: 101 = 4+0+1 = 5.", icon: "calculator" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "01000111 01001111! Kalian tidak paham? Bagus! Aku akan mengunci bahasanya!" },
+                    { speaker: "The Glitch Wizard", text: "Pecahkan kode biner ini untuk membuka gerbang logika!" }
+                ]
+            },
+            // LEVEL 5: BRAINWARE (USER)
+            room5: {
+                title: "Level 5: Command Center",
+                icon: "users",
+                intro_dialogue: [
+                    { speaker: "The Admin", text: "Ini dia. Pusat kendali. Tapi sistem terkunci. Kita butuh Brainware yang tepat." },
+                    { speaker: "The Admin", text: "Brainware adalah manusia yang mengoperasikan sistem komputer." }
+                ],
+                lessons: [
+                    { title: "Definisi Brainware", content: "Manusia yang terlibat dalam pengoperasian sistem komputer.", icon: "user" },
+                    { title: "Programmer", content: "Orang yang membuat program/aplikasi menggunakan bahasa pemrograman.", icon: "code-2" },
+                    { title: "Operator & Analyst", content: "Operator: Pengguna biasa. Analyst: Merancang sistem keseluruhan.", icon: "network" }
+                ],
+                villain_dialogue: [
+                    { speaker: "The Glitch Wizard", text: "AKULAH SATU-SATUNYA ADMIN DI SINI! Tidak ada manusia yang boleh masuk!" },
+                    { speaker: "The Glitch Wizard", text: "Siapa yang berani mengambil alih kendali? Tunjukkan identitasmu!" }
+                ]
+            }
+        };
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            view: 'START', 
+            room: 0,
+            maxRooms: 6,
+            dialogueQueue: [],
+            dialogueIndex: 0,
+            lessonIndex: 0,
+            // Puzzle States
+            puzzle0: { order: [] }, // Alur sistem komputer
+            puzzle1: { items: [], score: 0 },
+            puzzle2: { order: [] },
+            puzzle3: { items: [], score: 0 }, // Volatile vs Non-Volatile
+            puzzle4: { target: 0, current: 0, bits: [false, false, false] }, // Binary switches
+            puzzle5: { currentQuestion: 0, score: 0, questions: [] } // Brainware Quiz
+        };
+
+        // --- POINT INTEGRATION ---
+        const COMPLETION_STORAGE_KEY = 'sistemkomputer_completed';
+        const POINTS_REWARD = 50;
+        const MATERI_ID = 'sistemkomputer'; // ID untuk identifikasi materi
+
+        // Check if already completed
+        function hasCompleted() {
+            return localStorage.getItem(COMPLETION_STORAGE_KEY) === 'true';
+        }
+
+        // Mark as completed and send points to parent
+        function markAsCompleted() {
+            // Set completion flag
+            localStorage.setItem(COMPLETION_STORAGE_KEY, 'true');
+            
+            // Send message to parent (if in iframe)
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'MATERI_COMPLETED',
+                    materiId: MATERI_ID,
+                    points: POINTS_REWARD
+                }, '*'); // Use specific origin in production
+            }
+        }
+
+        // --- NPC IMAGE MAPPING ---
+        function getNPCImage(speaker) {
+            const npcMap = {
+                'Bit (Bot)': 'npc1.png',
+                'Mr. Circuit': 'npc1.png',
+                'Miss App': 'npc2.png',
+                'Memo The Librarian': 'npc3.png',
+                'Agent Zero': 'npc4.png',
+                'The Admin': 'npc5.png',
+                'The Glitch Wizard': 'glitch.png',
+                'System': null // System tidak punya gambar
+            };
+            
+            // Find matching speaker (case-insensitive partial match)
+            for (const [key, image] of Object.entries(npcMap)) {
+                if (speaker.includes(key) || key.includes(speaker)) {
+                    return image;
+                }
+            }
+            
+            return null; // Default: no image
+        }
+
+        // --- CORE FUNCTIONS ---
+
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = ''; 
+
+            switch (state.view) {
+                case 'START': renderStart(app); break;
+                case 'DIALOGUE': renderDialogue(app); break;
+                case 'ROOM_HUB': renderRoomHub(app); break;
+                case 'LEARNING': renderLearning(app); break;
+                case 'PUZZLE': 
+                    if (state.room === 0) renderPuzzle0(app);
+                    else if (state.room === 1) renderPuzzle1(app);
+                    else if (state.room === 2) renderPuzzle2(app);
+                    else if (state.room === 3) renderPuzzle3(app);
+                    else if (state.room === 4) renderPuzzle4(app);
+                    else if (state.room === 5) renderPuzzle5(app);
+                    break;
+                case 'WIN_ROOM': renderWinRoom(app); break;
+                case 'VICTORY': renderVictory(app); break;
+            }
+            lucide.createIcons();
+        }
+
+        // --- VIEW RENDERERS ---
+
+        function renderStart(container) {
+            const completed = hasCompleted();
+            
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full p-8 text-center space-y-8 animate-slide-up">
+                    <div class="p-6 bg-cyan-500/10 rounded-full border border-cyan-500/50 animate-pulse-glow">
+                        <i data-lucide="cpu" class="w-20 h-20 text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 mb-2">
+                            ESCAPE THE GLITCH
+                        </h1>
+                        <p class="text-slate-400 text-lg font-mono">Mission: System Restore</p>
+                    </div>
+                    ${completed ? `
+                        <div class="bg-green-900/30 border border-green-500/50 rounded-xl p-4 max-w-md">
+                            <i data-lucide="check-circle" class="w-12 h-12 text-green-400 mx-auto mb-2"></i>
+                            <p class="text-green-300 font-bold mb-1">✅ Mission Sudah Selesai!</p>
+                            <p class="text-slate-400 text-sm">Kamu sudah menyelesaikan misi ini dan mendapatkan ${POINTS_REWARD} poin.</p>
+                            <p class="text-slate-500 text-xs mt-2">Hapus cache localStorage untuk mengulang.</p>
+                        </div>
+                    ` : `
+                        <button onclick="startGame()" class="btn bg-cyan-500 hover:bg-cyan-400 border-cyan-700 text-white w-64 text-xl px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                            START MISSION <i data-lucide="play" class="w-6 h-6"></i>
+                        </button>
+                    `}
+                    <div class="text-xs text-slate-600 mt-8">6 Levels • Interactive • Informatics Grade 8</div>
+                </div>
+            `;
+        }
+
+        function renderDialogue(container) {
+            const dialogue = state.dialogueQueue[state.dialogueIndex];
+            const isVillain = dialogue.speaker === "The Glitch Wizard" || dialogue.speaker.includes("Glitch Wizard");
+            const isAdmin = dialogue.speaker === "The Admin" || dialogue.speaker.includes("Admin");
+            const borderColor = isVillain ? "border-red-500 bg-red-950/90" : "border-cyan-500 bg-slate-900/90";
+            const textColor = isVillain ? "text-red-300" : "text-cyan-300";
+            const npcImage = getNPCImage(dialogue.speaker);
+            
+            // Determine image size: 3x for Admin and Glitch, 2x for others
+            let imageSizeClass = '';
+            let paddingTop = '';
+            if (isAdmin || isVillain) {
+                // 3x larger: w-96 h-96 (384px) on mobile, w-[480px] h-[480px] (480px) on desktop
+                imageSizeClass = 'w-96 h-96 md:w-[480px] md:h-[480px]';
+                paddingTop = 'pt-24 md:pt-32';
+            } else if (npcImage) {
+                // 2x larger: w-64 h-64 (256px) on mobile, w-80 h-80 (320px) on desktop
+                imageSizeClass = 'w-64 h-64 md:w-80 md:h-80';
+                paddingTop = 'pt-16 md:pt-20';
+            }
+            
+            container.innerHTML = `
+                <div class="flex-1 bg-black/50 flex flex-col justify-end p-4 pb-12">
+                    <div class="w-full max-w-2xl mx-auto mb-4 flex flex-col items-center animate-slide-up" style="gap: 0;">
+                        ${npcImage ? `
+                            <div class="relative -mb-4 z-10 ${isVillain ? 'animate-pulse' : ''}">
+                                <img src="${npcImage}" alt="${dialogue.speaker}" 
+                                     class="${imageSizeClass} object-contain"
+                                     style="filter: ${isVillain ? 'drop-shadow(0 0 15px rgba(239, 68, 68, 0.6))' : 'drop-shadow(0 0 15px rgba(6, 182, 212, 0.4))'};">
+                            </div>
+                        ` : ''}
+                        <div class="w-full rounded-xl border-2 p-6 shadow-2xl ${borderColor} ${npcImage ? paddingTop : ''}">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold text-lg ${textColor}">${dialogue.speaker}</h3>
+                                <span class="text-xs text-gray-400">${state.dialogueIndex + 1}/${state.dialogueQueue.length}</span>
+                            </div>
+                            <p class="text-white text-lg leading-relaxed mb-6 font-mono typing-effect">
+                                ${dialogue.text}
+                            </p>
+                            <div class="flex justify-end">
+                                <button onclick="nextDialogue()" class="btn ${isVillain ? 'bg-red-600 border-red-800' : 'bg-cyan-600 border-cyan-800'} text-white px-4 py-2 rounded-lg font-bold flex items-center">
+                                    Lanjut <i data-lucide="arrow-right" class="ml-1 w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRoomHub(container) {
+            const roomKey = `room${state.room}`;
+            const roomData = GAME_DATA[roomKey];
+            
+            // Safety check: if room data doesn't exist, go to victory
+            if (!roomData) {
+                state.view = 'VICTORY';
+                render();
+                return;
+            }
+            
+            const colors = ["cyan", "blue", "purple", "yellow", "green", "red"]; // Theme colors per room
+            const color = colors[state.room] || "cyan";
+
+            container.innerHTML = `
+                 <div class="flex flex-col h-full p-6">
+                    <header class="mb-8 flex items-center justify-between">
+                        <h2 class="text-white font-bold text-sm md:text-xl flex items-center gap-2">
+                            <i data-lucide="shield-alert" class="text-${color}-400 w-5 h-5"></i> GLITCH DETECTED
+                        </h2>
+                        <div class="bg-slate-800 px-3 py-1 rounded-full text-xs text-white border border-slate-600">
+                            Sektor ${state.room + 1}/6
+                        </div>
+                    </header>
+                    <div class="flex-1 flex flex-col items-center justify-center space-y-8">
+                        <div class="glass-panel w-full max-w-md text-center space-y-6 rounded-2xl p-6 shadow-2xl animate-bounce-in">
+                            <h3 class="text-2xl font-bold text-white uppercase">${roomData.title}</h3>
+                            <div class="p-8 bg-black/40 rounded-xl flex justify-center relative overflow-hidden">
+                                <div class="absolute inset-0 bg-${color}-500/20 animate-pulse"></div>
+                                <i data-lucide="${roomData.icon}" class="w-24 h-24 text-${color}-400 relative z-10"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm">Status: <span class="text-red-400 font-mono">LOCKED BY VILLAIN</span></p>
+                            <button onclick="enterRoom()" class="btn w-full bg-blue-600 border-blue-800 text-white px-6 py-3 rounded-xl font-bold">
+                                MASUK SEKTOR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLearning(container) {
+            const roomKey = `room${state.room}`;
+            const data = GAME_DATA[roomKey];
+            const lesson = data.lessons[state.lessonIndex];
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full items-center justify-center p-6 space-y-6">
+                    <h2 class="text-lg font-bold text-white mb-2 text-center w-full bg-slate-800/50 p-2 rounded">${data.title}</h2>
+                    
+                    <div class="w-full max-w-md flex-1 max-h-[400px] relative">
+                        <div class="glass-panel h-full flex flex-col items-center justify-center text-center rounded-2xl p-6 shadow-2xl animate-slide-up border-t-4 border-cyan-500">
+                            <div class="mb-6 p-4 bg-slate-700/50 rounded-full animate-pulse-glow">
+                                <i data-lucide="${lesson.icon}" class="w-12 h-12 text-cyan-400"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-cyan-300 mb-4">${lesson.title}</h3>
+                            <p class="text-slate-200 leading-relaxed text-sm md:text-base">${lesson.content}</p>
+                            
+                            <div class="mt-auto pt-4 w-full">
+                                <div class="w-full bg-slate-700 h-1 rounded-full overflow-hidden">
+                                    <div class="bg-cyan-500 h-full transition-all duration-300" style="width: ${((state.lessonIndex + 1) / data.lessons.length) * 100}%"></div>
+                                </div>
+                                <div class="mt-2 text-xs text-slate-500">
+                                    Materi ${state.lessonIndex + 1} / ${data.lessons.length}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 w-full max-w-md">
+                        <button onclick="prevLesson()" class="btn flex-1 bg-gray-700 border-gray-900 text-gray-300 px-4 py-3 rounded-xl font-bold" ${state.lessonIndex === 0 ? 'disabled style="opacity:0.5"' : ''}>
+                            <i data-lucide="arrow-left" class="mx-auto"></i>
+                        </button>
+                        <button onclick="nextLesson()" class="btn flex-[3] ${state.lessonIndex === data.lessons.length - 1 ? 'bg-green-600 border-green-800' : 'bg-cyan-600 border-cyan-800'} text-white px-4 py-3 rounded-xl font-bold">
+                            ${state.lessonIndex === data.lessons.length - 1 ? 'TANTANG BOSS!' : 'LANJUT'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- PUZZLE RENDERERS ---
+
+        // Level 0: Alur Sistem Komputer
+        function renderPuzzle0(container) {
+            let flowHTML = state.puzzle0.order.map((item, idx) => `
+                <div class="bg-cyan-600/20 border border-cyan-500 text-cyan-300 p-2 rounded text-center animate-slide-up text-sm font-bold w-full">
+                    ${idx + 1}. ${item.label}
+                </div>
+            `).reverse().join('');
+            
+            const options = [
+                { id: 'input', label: 'Input (Masuk)', level: 1 },
+                { id: 'process', label: 'Process (Olah)', level: 2 },
+                { id: 'storage', label: 'Storage (Simpan)', level: 3 },
+                { id: 'output', label: 'Output (Keluar)', level: 4 },
+            ];
+            
+            const remaining = options.filter(opt => !state.puzzle0.order.find(o => o.id === opt.id));
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center max-w-md mx-auto">
+                   <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold text-cyan-400 font-mono">TASK: SUSUN ALUR SISTEM</h2>
+                        <p class="text-xs text-slate-400">Susun dari AWAL (Input) ke AKHIR (Output).</p>
+                    </div>
+                    <div class="flex flex-col-reverse justify-start gap-1 w-full h-[200px] bg-slate-900/50 p-4 rounded-xl border-2 border-dashed border-slate-700 mb-4 overflow-y-auto">
+                        ${flowHTML || '<div class="text-slate-600 text-center my-auto italic text-sm">Area Kosong</div>'}
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        ${remaining.map(opt => `
+                            <button onclick="addToFlow('${opt.id}')" class="btn bg-slate-700 border-slate-600 text-white py-3 rounded-xl text-sm font-bold">
+                                + ${opt.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <button onclick="resetFlow()" class="absolute top-4 right-4 text-slate-500"><i data-lucide="rotate-ccw"></i></button>
+                </div>
+            `;
+        }
+
+        // Level 1: Sorting Hardware
+        function renderPuzzle1(container) {
+            const currentItem = state.puzzle1.items[0];
+            if (!currentItem) { finishPuzzle(); return; }
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center">
+                    <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold text-red-400 font-mono">TASK: CATEGORIZE HARDWARE</h2>
+                        <p class="text-xs text-slate-400">Tentukan fungsi komponen ini.</p>
+                        <div class="w-full bg-slate-800 h-2 mt-2 rounded-full"><div class="bg-green-500 h-2 rounded-full" style="width: ${(state.puzzle1.score/5)*100}%"></div></div>
+                    </div>
+                    <div class="glass-panel w-full max-w-xs mx-auto aspect-square flex flex-col items-center justify-center rounded-2xl p-4 animate-bounce-in relative">
+                        <i data-lucide="${currentItem.icon}" class="w-16 h-16 text-white mb-4"></i>
+                        <h3 class="text-xl font-bold text-white mb-6 text-center">${currentItem.name}</h3>
+                        <div class="grid grid-cols-2 gap-2 w-full">
+                            <button onclick="checkPuzzle1('Input')" class="btn p-2 bg-blue-900/50 border-blue-500 text-blue-200 text-sm rounded">Input (Masuk)</button>
+                            <button onclick="checkPuzzle1('Process')" class="btn p-2 bg-purple-900/50 border-purple-500 text-purple-200 text-sm rounded">Process (Olah)</button>
+                            <button onclick="checkPuzzle1('Output')" class="btn p-2 bg-yellow-900/50 border-yellow-500 text-yellow-200 text-sm rounded">Output (Keluar)</button>
+                            <button onclick="checkPuzzle1('Storage')" class="btn p-2 bg-green-900/50 border-green-500 text-green-200 text-sm rounded">Storage (Simpan)</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Level 2: Software Stack
+        function renderPuzzle2(container) {
+            let stackHTML = state.puzzle2.order.map((item, idx) => `
+                <div class="bg-green-600/20 border border-green-500 text-green-300 p-2 rounded text-center animate-slide-up text-sm font-bold w-full">
+                    ${idx + 1}. ${item.label}
+                </div>
+            `).reverse().join('');
+            
+            const options = [
+                { id: 'usr', label: 'Brainware (User)', level: 4 },
+                { id: 'app', label: 'Aplikasi (Browser)', level: 3 },
+                { id: 'os', label: 'Sistem Operasi (OS)', level: 2 },
+                { id: 'hw', label: 'Hardware (Fisik)', level: 1 },
+            ];
+            
+            const remaining = options.filter(opt => !state.puzzle2.order.find(o => o.id === opt.id));
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center max-w-md mx-auto">
+                   <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold text-purple-400 font-mono">TASK: SYSTEM STACK</h2>
+                        <p class="text-xs text-slate-400">Bangun dari PALING BAWAH (Hardware) ke ATAS.</p>
+                    </div>
+                    <div class="flex flex-col-reverse justify-start gap-1 w-full h-[200px] bg-slate-900/50 p-4 rounded-xl border-2 border-dashed border-slate-700 mb-4 overflow-y-auto">
+                        ${stackHTML || '<div class="text-slate-600 text-center my-auto italic text-sm">Area Kosong</div>'}
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        ${remaining.map(opt => `
+                            <button onclick="addToStack('${opt.id}')" class="btn bg-slate-700 border-slate-600 text-white py-3 rounded-xl text-sm font-bold">
+                                + ${opt.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <button onclick="resetStack()" class="absolute top-4 right-4 text-slate-500"><i data-lucide="rotate-ccw"></i></button>
+                </div>
+            `;
+        }
+
+        // Level 3: Volatile vs Non-Volatile (Memory)
+        function renderPuzzle3(container) {
+            const currentItem = state.puzzle3.items[0];
+            if (!currentItem) { finishPuzzle(); return; }
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center relative">
+                    <div class="text-center mb-8">
+                        <h2 class="text-xl font-bold text-yellow-400 font-mono">TASK: POWER CUT SIMULATION</h2>
+                        <p class="text-sm text-slate-400">Listrik mati! Data ini HILANG atau TETAP?</p>
+                        <div class="w-full bg-slate-800 h-2 mt-2 rounded-full"><div class="bg-yellow-500 h-2 rounded-full" style="width: ${(state.puzzle3.score/5)*100}%"></div></div>
+                    </div>
+
+                    <div class="glass-panel w-full max-w-xs mx-auto p-6 rounded-2xl flex flex-col items-center animate-bounce-in">
+                        <div class="bg-slate-700 p-4 rounded-full mb-4">
+                            <i data-lucide="${currentItem.icon}" class="w-12 h-12 text-yellow-200"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 text-center">${currentItem.name}</h3>
+                        <p class="text-xs text-slate-400 text-center mb-6 italic">"${currentItem.desc}"</p>
+                        
+                        <div class="flex gap-4 w-full">
+                            <button onclick="checkPuzzle3('volatile')" class="btn flex-1 bg-red-900/50 border-red-500 text-red-200 p-2 rounded text-sm font-bold">
+                                HILANG (RAM)
+                            </button>
+                            <button onclick="checkPuzzle3('non-volatile')" class="btn flex-1 bg-green-900/50 border-green-500 text-green-200 p-2 rounded text-sm font-bold">
+                                TETAP (Storage)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Level 4: Binary Switches
+        function renderPuzzle4(container) {
+            const target = state.puzzle4.target;
+            
+            // Calculate current value based on bits: [4, 2, 1]
+            const val4 = state.puzzle4.bits[0] ? 4 : 0;
+            const val2 = state.puzzle4.bits[1] ? 2 : 0;
+            const val1 = state.puzzle4.bits[2] ? 1 : 0;
+            const currentSum = val4 + val2 + val1;
+
+            if (currentSum === target) {
+                setTimeout(finishPuzzle, 500); // Correct!
+            }
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center items-center">
+                    <div class="text-center mb-8">
+                        <h2 class="text-xl font-bold text-green-400 font-mono">TASK: BINARY DECODER</h2>
+                        <p class="text-sm text-slate-400">Nyalakan bit agar jumlahnya sama dengan Target.</p>
+                    </div>
+
+                    <div class="glass-panel w-full max-w-sm p-6 rounded-2xl flex flex-col items-center">
+                        <div class="flex justify-between w-full mb-8 px-4">
+                            <div class="text-center">
+                                <div class="text-xs text-slate-500 uppercase">Target</div>
+                                <div class="text-4xl font-black text-white">${target}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-xs text-slate-500 uppercase">Current</div>
+                                <div class="text-4xl font-black ${currentSum === target ? 'text-green-400' : 'text-red-400'}">${currentSum}</div>
+                            </div>
+                        </div>
+
+                        <!-- Switches -->
+                        <div class="flex gap-4 mb-4">
+                            ${[4, 2, 1].map((val, idx) => `
+                                <div class="flex flex-col items-center gap-2">
+                                    <button onclick="toggleBit(${idx})" class="w-16 h-24 rounded-lg border-2 flex items-center justify-center transition-all ${state.puzzle4.bits[idx] ? 'bg-green-500 border-green-300 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : 'bg-slate-800 border-slate-600'}">
+                                        <span class="text-2xl font-bold text-white">${state.puzzle4.bits[idx] ? '1' : '0'}</span>
+                                    </button>
+                                    <span class="text-xs font-mono text-slate-400">Nilai: ${val}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <p class="text-xs text-slate-500 text-center mt-4">Rumus: ${val4} + ${val2} + ${val1} = ${currentSum}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Level 5: Brainware Matcher
+        function renderPuzzle5(container) {
+            const q = state.puzzle5.questions[state.puzzle5.currentQuestion];
+            if (!q) { finishPuzzle(); return; }
+
+            container.innerHTML = `
+                <div class="flex flex-col h-full p-4 justify-center">
+                     <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold text-red-500 font-mono">FINAL SECURITY CHECK</h2>
+                        <p class="text-sm text-slate-400">Siapa yang bertanggung jawab?</p>
+                        <div class="w-full bg-slate-800 h-2 mt-2 rounded-full"><div class="bg-red-500 h-2 rounded-full" style="width: ${(state.puzzle5.currentQuestion/3)*100}%"></div></div>
+                    </div>
+
+                    <div class="glass-panel w-full max-w-sm mx-auto p-6 rounded-2xl animate-slide-up">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-white mb-2">Kasus #${state.puzzle5.currentQuestion + 1}</h3>
+                            <p class="text-slate-300 text-sm leading-relaxed">"${q.scenario}"</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            ${q.options.map(opt => `
+                                <button onclick="checkPuzzle5('${opt}')" class="btn bg-slate-700 border-slate-600 hover:bg-slate-600 text-white p-3 rounded-lg text-left flex items-center gap-3">
+                                    <div class="w-4 h-4 rounded-full border border-slate-400"></div>
+                                    ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWinRoom(container) {
+            const isFinal = state.room === state.maxRooms;
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-green-900/20 space-y-6 animate-slide-up">
+                    <i data-lucide="check-circle" class="w-24 h-24 text-green-500 animate-bounce"></i>
+                    <h2 class="text-3xl font-bold text-white">GLITCH CLEARED!</h2>
+                    <p class="text-slate-300 text-lg">
+                        Keamanan Sektor ${state.room + 1} berhasil dipulihkan.
+                    </p>
+                    <button onclick="nextLevel()" class="btn bg-green-600 border-green-800 text-white w-full max-w-xs px-6 py-3 rounded-xl font-bold animate-pulse">
+                        ${isFinal ? "LOG OUT (FINISH)" : "LANJUT KE SEKTOR BERIKUTNYA"}
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderVictory(container) {
+            // Check if already completed (prevent duplicate points)
+            const alreadyCompleted = hasCompleted();
+            
+            // Mark as completed and send points (only if not already completed)
+            if (!alreadyCompleted) {
+                markAsCompleted();
+            }
+            
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full p-6 text-center space-y-6 animate-slide-up overflow-y-auto">
+                    <div class="bg-white/10 p-6 rounded-full mt-8">
+                        <i data-lucide="award" class="w-16 h-16 text-yellow-400"></i>
+                    </div>
+                    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                        MISSION ACCOMPLISHED
+                    </h1>
+                    <p class="text-slate-300 text-sm">
+                        Selamat, Agent! Kamu telah memperbaiki seluruh sistem Mainframe City dan berhasil Log Out.
+                    </p>
+                    ${!alreadyCompleted ? `
+                        <div class="bg-green-900/30 border border-green-500/50 rounded-xl p-4 max-w-md">
+                            <i data-lucide="star" class="w-8 h-8 text-yellow-400 mx-auto mb-2"></i>
+                            <p class="text-green-300 font-bold">🎉 Kamu mendapat ${POINTS_REWARD} poin!</p>
+                            <p class="text-slate-400 text-xs mt-1">Poin telah ditambahkan ke akunmu.</p>
+                        </div>
+                    ` : `
+                        <div class="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4 max-w-md">
+                            <p class="text-blue-300 text-sm">ℹ️ Misi ini sudah pernah kamu selesaikan sebelumnya.</p>
+                        </div>
+                    `}
+                    
+                    <div class="bg-slate-800 p-4 rounded-lg text-left w-full max-w-md text-xs md:text-sm text-slate-400 border border-slate-700 space-y-2">
+                        <p class="font-bold text-white border-b border-slate-600 pb-2">RECAP MATERI:</p>
+                        <p>0. <b>Komponen Sistem:</b> Hardware, Software, Brainware (analogi pencernaan).</p>
+                        <p>1. <b>Hardware:</b> Komponen fisik (Input, Process, Output, Storage).</p>
+                        <p>2. <b>Software:</b> Perangkat lunak (OS, Aplikasi, Pemrograman).</p>
+                        <p>3. <b>Storage:</b> RAM (Sementara) vs HDD (Permanen) + Cloud.</p>
+                        <p>4. <b>Binary:</b> Bahasa mesin (0 & 1).</p>
+                        <p>5. <b>Brainware:</b> Peran manusia (Programmer, dll).</p>
+                    </div>
+
+                    <button onclick="location.reload()" class="btn bg-cyan-600 border-cyan-800 text-white mt-4 px-6 py-3 rounded-xl font-bold mb-8">
+                        Kembali ke Menu
+                    </button>
+                </div>
+            `;
+        }
+
+
+        // --- LOGIC HANDLERS ---
+
+        function startGame() {
+            state.dialogueQueue = GAME_DATA.intro;
+            state.dialogueIndex = 0;
+            state.view = 'DIALOGUE';
+            render();
+        }
+
+        function nextDialogue() {
+            if (state.dialogueIndex < state.dialogueQueue.length - 1) {
+                state.dialogueIndex++;
+                render();
+            } else {
+                const speaker = state.dialogueQueue[0].speaker;
+                if (speaker === "System" || speaker.includes("System")) { // Start
+                    state.view = 'ROOM_HUB';
+                } else if (state.dialogueQueue[0].speaker.includes("Bit") ||
+                           state.dialogueQueue[0].speaker.includes("Circuit") || 
+                           state.dialogueQueue[0].speaker.includes("App") ||
+                           state.dialogueQueue[0].speaker.includes("Memo") ||
+                           state.dialogueQueue[0].speaker.includes("Agent") ||
+                           state.dialogueQueue[0].speaker.includes("Admin")) { // Teacher
+                    state.view = 'LEARNING';
+                } else if (speaker === "The Glitch Wizard") { // Villain
+                    state.view = 'PUZZLE';
+                    initPuzzle();
+                }
+                render();
+            }
+        }
+
+        function enterRoom() {
+            const data = GAME_DATA[`room${state.room}`];
+            state.dialogueQueue = data.intro_dialogue;
+            state.dialogueIndex = 0;
+            state.lessonIndex = 0;
+            state.view = 'DIALOGUE';
+            render();
+        }
+
+        function prevLesson() {
+            if (state.lessonIndex > 0) { state.lessonIndex--; render(); }
+        }
+
+        function nextLesson() {
+            const data = GAME_DATA[`room${state.room}`];
+            if (state.lessonIndex < data.lessons.length - 1) {
+                state.lessonIndex++;
+                render();
+            } else {
+                state.dialogueQueue = data.villain_dialogue;
+                state.dialogueIndex = 0;
+                state.view = 'DIALOGUE';
+                render();
+            }
+        }
+
+        function finishPuzzle() {
+            state.view = 'WIN_ROOM';
+            render();
+        }
+
+        function nextLevel() {
+            // maxRooms is 6, so valid rooms are 0-5 (6 rooms total)
+            // When room is 5 (last room), next should go to victory
+            if (state.room < state.maxRooms - 1) {
+                state.room++;
+                state.view = 'ROOM_HUB';
+            } else {
+                state.view = 'VICTORY';
+            }
+            render();
+        }
+
+        // --- PUZZLE LOGIC IMPL ---
+
+        function initPuzzle() {
+            if (state.room === 0) {
+                state.puzzle0.order = [];
+            }
+            else if (state.room === 1) {
+                state.puzzle1.items = [
+                    { name: "Keyboard", type: "Input", icon: "keyboard" },
+                    { name: "Monitor", type: "Output", icon: "monitor" },
+                    { name: "CPU", type: "Process", icon: "cpu" },
+                    { name: "Harddisk", type: "Storage", icon: "hard-drive" },
+                    { name: "Mouse", type: "Input", icon: "mouse" }
+                ].sort(() => Math.random() - 0.5);
+                state.puzzle1.score = 0;
+            } 
+            else if (state.room === 2) {
+                state.puzzle2.order = [];
+            }
+            else if (state.room === 3) { // Memory
+                state.puzzle3.items = [
+                    { name: "Dokumen Word (Belum Save)", type: "volatile", icon: "file-text", desc: "Kamu sedang mengetik..." },
+                    { name: "Foto di Harddisk", type: "non-volatile", icon: "image", desc: "Foto liburan tahun lalu." },
+                    { name: "Game Level (Loading)", type: "volatile", icon: "loader", desc: "Data sedang dimuat di RAM." },
+                    { name: "Lagu MP3 di Flashdisk", type: "non-volatile", icon: "music", desc: "Disimpan untuk diputar nanti." },
+                    { name: "Clipboard (Copy-Paste)", type: "volatile", icon: "scissors", desc: "Teks yang baru dicopy." }
+                ];
+                state.puzzle3.score = 0;
+            }
+            else if (state.room === 4) { // Binary
+                // Random target 1-7 (since we have 3 bits: 4,2,1)
+                state.puzzle4.target = Math.floor(Math.random() * 7) + 1; 
+                state.puzzle4.bits = [false, false, false];
+            }
+            else if (state.room === 5) { // Brainware
+                state.puzzle5.questions = [
+                    { scenario: "Saya ingin membuat aplikasi Android baru. Siapa saya?", correct: "Programmer", options: ["Programmer", "Operator", "Gamer"] },
+                    { scenario: "Saya menggunakan komputer untuk mengetik surat di kantor. Siapa saya?", correct: "Operator", options: ["System Analyst", "Operator", "Hacker"] },
+                    { scenario: "Saya merancang alur sistem jaringan untuk satu gedung sekolah. Siapa saya?", correct: "Analyst", options: ["Operator", "Analyst", "Programmer"] }
+                ];
+                state.puzzle5.currentQuestion = 0;
+            }
+        }
+
+        // Puzzle 1 Check
+        function checkPuzzle1(type) {
+            const item = state.puzzle1.items[0];
+            if (item.type === type) {
+                state.puzzle1.score++;
+                state.puzzle1.items.shift();
+                render();
+            } else {
+                alertToast("Salah! Coba lagi.");
+            }
+        }
+
+        // Puzzle 0 Check
+        function addToFlow(id) {
+            const opts = [
+                { id: 'input', label: 'Input (Masuk)', level: 1 },
+                { id: 'process', label: 'Process (Olah)', level: 2 },
+                { id: 'storage', label: 'Storage (Simpan)', level: 3 },
+                { id: 'output', label: 'Output (Keluar)', level: 4 },
+            ];
+            const opt = opts.find(o => o.id === id);
+            state.puzzle0.order.push(opt);
+            render();
+
+            if (state.puzzle0.order.length === 4) {
+                const isCorrect = state.puzzle0.order.every((val, index) => val.level === index + 1);
+                setTimeout(() => {
+                    if (isCorrect) finishPuzzle();
+                    else {
+                        alertToast("Urutan Salah! Ulangi.");
+                        state.puzzle0.order = [];
+                        render();
+                    }
+                }, 500);
+            }
+        }
+        function resetFlow() { state.puzzle0.order = []; render(); }
+
+        // Puzzle 2 Check
+        function addToStack(id) {
+            const opts = [
+                { id: 'usr', label: 'Brainware (User)', level: 4 },
+                { id: 'app', label: 'Aplikasi (Browser)', level: 3 },
+                { id: 'os', label: 'Sistem Operasi (OS)', level: 2 },
+                { id: 'hw', label: 'Hardware (Fisik)', level: 1 },
+            ];
+            const opt = opts.find(o => o.id === id);
+            state.puzzle2.order.push(opt);
+            render();
+
+            if (state.puzzle2.order.length === 4) {
+                const isCorrect = state.puzzle2.order.every((val, index) => val.level === index + 1);
+                setTimeout(() => {
+                    if (isCorrect) finishPuzzle();
+                    else {
+                        alertToast("Urutan Salah! Ulangi.");
+                        state.puzzle2.order = [];
+                        render();
+                    }
+                }, 500);
+            }
+        }
+        function resetStack() { state.puzzle2.order = []; render(); }
+
+        // Puzzle 3 Check
+        function checkPuzzle3(type) {
+            const item = state.puzzle3.items[0];
+            if (item.type === type) {
+                state.puzzle3.score++;
+                state.puzzle3.items.shift();
+                render();
+            } else {
+                alertToast("Ups! Ingat: RAM itu hilang kalau mati lampu.");
+            }
+        }
+
+        // Puzzle 4 Toggle
+        function toggleBit(idx) {
+            state.puzzle4.bits[idx] = !state.puzzle4.bits[idx];
+            render();
+        }
+
+        // Puzzle 5 Check
+        function checkPuzzle5(answer) {
+            const q = state.puzzle5.questions[state.puzzle5.currentQuestion];
+            if (answer === q.correct) {
+                state.puzzle5.currentQuestion++;
+                render();
+            } else {
+                alertToast("Peran tidak cocok! Coba lagi.");
+            }
+        }
+
+        // Helper: Simple Toast
+        function alertToast(msg) {
+            const div = document.createElement('div');
+            div.className = "absolute top-10 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-xl font-bold z-50 animate-shake";
+            div.innerText = msg;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+
+        // Init
+        window.onload = () => render();
+
+    </script>
+</body>
+</html>
